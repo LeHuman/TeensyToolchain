@@ -1,4 +1,4 @@
-Teensy Project Toolchain
+Teensy Toolchain
 ===========================
  
 Purpose
