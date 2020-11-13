@@ -3,7 +3,7 @@ Teensy Toolchain
  
 Purpose
 -------
-A set of tool for compiling and uploading to a Teensy on Windows.
+A set of tools for compiling and uploading to a Teensy on Windows.
 
 This Toolchain was made specifically for the Teensy 3.6, however other teensy cores are included.
 
