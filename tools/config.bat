@@ -25,14 +25,14 @@ set call_path=%CD%
 set tool_path=%~dp0%
 set only_config=0
 set new_build_dir=0
-set skip_prebuild=1
+set skip_prebuild=0
 
 set "option=%1"
 set "COM_PORT=%2"
 
 if "%option%"=="" GOTO HELP_STR
 
-if %COM_PORT%=="-s" (
+if %COM_PORT%==-s (
     set skip_prebuild=1
 )
 
