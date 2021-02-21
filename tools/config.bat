@@ -32,9 +32,11 @@ set "COM_PORT=%2"
 
 if "%option%"=="" GOTO HELP_STR
 
-if %COM_PORT%==-s (
+if [%2]==[] GOTO SKIP_PRE_CHECK
+if %COM_PORT:/"=%==-s (
     set skip_prebuild=1
 )
+:SKIP_PRE_CHECK
 
 if not exist build (
     mkdir build
