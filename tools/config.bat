@@ -25,16 +25,25 @@ set call_path=%CD%
 set tool_path=%~dp0%
 set only_config=0
 set new_build_dir=0
+set skip_prebuild=1
+
+set "option=%1"
+set "COM_PORT=%2"
+
+if "%option%"=="" GOTO HELP_STR
+
+if %COM_PORT%=="-s" (
+    set skip_prebuild=1
+)
+
 if not exist build (
     mkdir build
     set new_build_dir=1
 )
+
 if not exist build/build.ninja (
     set no_ninja_script=1
 )
-
-set "option=%1"
-set "COM_PORT=%2"
 
 shift
 set CMAKE_PARAMS=%1
@@ -48,8 +57,6 @@ goto CMAKE_LOOP
 set CMAKE_PARAMS=%CMAKE_PARAMS:\"=%
 
 @REM echo %CMAKE_PARAMS%
-
-if "%option%"=="" GOTO HELP_STR
 
 if "%option%"=="build" (
     echo %A_BOLD%%A_UNDER%Build Project%A_RESET%
@@ -102,9 +109,15 @@ echo    %A_BOLD%hard_clean%A_RESET%         : Refresh project to a clean state, 
 echo                         extra variables to auto config cmake
 echo    %A_BOLD%config%A_RESET%             : Reconfigure cmake project, can pass any
 echo                         extra variables for cmake
+echo %A_UNDER%%A_BOLD%Valid flags%A_RESET%
 echo.
-echo If a script is named %A_MAGENTA%`Pre_Build`%A_RESET%  and is at the root of a project
-echo It is run before configuring CMake, It can be a %A_MAGENTA%`.bat`%A_RESET%, %A_MAGENTA%`.ps1`%A_RESET%, or %A_MAGENTA%`.py`%A_RESET%
+echo    %A_BOLD%-s%A_RESET%                 : Skip any %A_MAGENTA%`Pre_Build`%A_RESET% script that exists
+echo.
+echo %A_UNDER%%A_BOLD%Prebuild Script%A_RESET%
+echo.
+echo If a script is named %A_MAGENTA%`Pre_Build`%A_RESET% and is at the root of a project
+echo it will be run before configuring CMake
+echo It can be a %A_CYAN%`.bat`%A_RESET%, %A_CYAN%`.ps1`%A_RESET%, or %A_CYAN%`.py`%A_RESET%
 echo Only one is run, prefering the file type is that order
 
 exit /b 0
@@ -122,6 +135,11 @@ timeout /t 1 /nobreak >NUL
 mkdir build
 timeout /t 1 /nobreak >NUL
 :END_CLEAN
+
+if "%skip_prebuild%"=="1" (
+    echo %A_YELLOW%Skipping Pre_Build script%A_RESET%
+    GOTO __NO_PREBUILD
+)
 
 if exist Pre_Build.bat (
     echo %A_CYAN%%A_BOLD%Running Pre-Build Batch Script%A_RESET% 🧰⚙
@@ -160,6 +178,11 @@ if errorlevel 1 (
 if "%only_config%"=="1" GOTO END_SCRIPT
 cd ".."
 :FINISH_CLEAN_SECTION
+
+if "%skip_prebuild%"=="1" (
+    echo %A_YELLOW%Skipping Pre_Build script%A_RESET%
+    GOTO NO_PREBUILD
+)
 
 if exist Pre_Build.bat (
     echo %A_CYAN%%A_BOLD%Running Pre-Build Batch Script%A_RESET% 🧰⚙
