@@ -1,11 +1,19 @@
 @echo off
 
+set DEBUG=0
+set NOEMOJI=0
+set NOCOLOR=0
+
 for /f "tokens=4-5 delims=. " %%i in ('ver') do set VERSION=%%i.%%j
 if not "%version%" == "10.0" (
     echo Warning, only tested on Windows 10
+    echo Disabling text formatting
     echo.
+    set NOEMOJI=1
+    set NOCOLOR=1
 )
 
+if "%NOCOLOR%"=="1" goto :SET_NOCOLOR
 chcp 65001 >NUL
 set ASCII27=
 set A_RESET=%ASCII27%[0m
@@ -19,21 +27,81 @@ set A_BLUE=%ASCII27%[34m
 set A_MAGENTA=%ASCII27%[35m
 set A_CYAN=%ASCII27%[36m
 set A_WHITE=%ASCII27%[37m
+goto :END_SET_NOCOLOR
 
+:SET_NOCOLOR
+set A_RESET=
+set A_BOLD=
+set A_UNDER=
+set A_BLACK=
+set A_RED=
+set A_GREEN=
+set A_YELLOW=
+set A_BLUE=
+set A_MAGENTA=
+set A_CYAN=
+set A_WHITE=
+:END_SET_NOCOLOR
 
-set call_path=%CD%
-set tool_path=%~dp0%
+if "%NOEMOJI%"=="1" goto :SET_NOEMOJI
+chcp 65001 >NUL
+set E_CHECK=✔️
+set E_EHCKS=❌
+set E_EHCK2=✖
+set E_FINIS=🍕
+set E_PREBL=🧰
+set E_SPEED=🏎️
+set E_STOPD=⛔
+set E_UPLOD=🔌
+set E_UPRUN=⚡
+set E_WAITN=⏳
+set E_CLEAN=🧹
+set E_CLNDB=🧼🧽
+set E_GEARN=⚙️
+goto :END_SET_NOEMOJI
+
+:SET_NOEMOJI
+set E_CHECK=
+set E_EHCKS=
+set E_EHCK2=
+set E_FINIS=
+set E_PREBL=
+set E_SPEED=
+set E_STOPD=
+set E_UPLOD=
+set E_UPRUN=
+set E_WAITN=
+set E_CLEAN=
+set E_CLNDB=
+set E_GEARN=
+:END_SET_NOEMOJI
+
+set call_path="%CD%"
+set tool_path="%~dp0%"
+set tool_path=%tool_path:"=%
 set only_config=0
 set new_build_dir=0
 set skip_prebuild=0
 
-set "option=%1"
-set "COM_PORT=%2"
+set option="%1"
+set COM_PORT="%2"
+set COM_ARG=%COM_PORT:"=%
 
-if "%option%"=="" GOTO HELP_STR
+if "%DEBUG%"=="1" (
+    echo option %option%
+    echo COM_PORT %COM_PORT%
+    echo COM_ARG %COM_ARG%
+    echo call_path %call_path%
+    echo tool_path %tool_path%
+)
 
-if [%2]==[] GOTO SKIP_PRE_CHECK
-if %COM_PORT:/"=%==-s (
+if %option%=="" (
+    goto :HELP_STR
+) 
+
+if [%2]==[] goto :SKIP_PRE_CHECK
+
+if COM_ARG==-s (
     set skip_prebuild=1
 )
 :SKIP_PRE_CHECK
@@ -52,51 +120,57 @@ set CMAKE_PARAMS=%1
 
 :CMAKE_LOOP
 shift
-if [%1]==[] goto CMAKE_AFTERLOOP
+if [%1]==[] goto :CMAKE_AFTERLOOP
 set CMAKE_PARAMS=%CMAKE_PARAMS% %1
-goto CMAKE_LOOP
+goto :CMAKE_LOOP
 :CMAKE_AFTERLOOP
 set CMAKE_PARAMS=%CMAKE_PARAMS:\"=%
 
-@REM echo %CMAKE_PARAMS%
+if "%DEBUG%"=="1" (
+    echo %CMAKE_PARAMS%
+)
 
-if "%option%"=="build" (
+if %option%=="build" (
     echo %A_BOLD%%A_UNDER%Build Project%A_RESET%
     echo.
-    GOTO BUILD
+    goto :BUILD
 )
-if "%option%"=="upload" (
-    echo %A_BOLD%%A_UNDER%Upload Binary%A_RESET%
+if %option%=="upload" (
+    echo %A_BOLD%%A_UNDER%Upload Binary%A_RESET% %E_UPRUN%
     echo.
-    GOTO UPLOAD
+    goto :UPLOAD
 )
-if "%option%"=="config" (
+if %option%=="config" (
     echo %A_BOLD%%A_UNDER%Configure Project%A_RESET%
     echo.
     set only_config=1
-    GOTO END_CLEAN
+    goto :END_CLEAN
 )
-if "%option%"=="clean" (
+if %option%=="clean" (
     if "%no_ninja_script%"=="1" (
-        echo %A_BOLD%%A_RED%Project is invalid%A_RESET% ⛔
+        echo %A_BOLD%%A_RED%Project is invalid%A_RESET% %E_STOPD%
         echo Consider running config or hard_clean
         start /wait exit /b 1
-        GOTO END_SCRIPT
+        goto :END_SCRIPT
     )
     cd build
-    echo %A_BOLD%%A_UNDER%Cleaning%A_RESET% 🧹
-    %tool_path%ninja.exe clean
-    if errorlevel 1 echo %A_BOLD%%A_RED%Error cleaning up build files%A_RESET% ⛔
-    GOTO END_SCRIPT
+    echo %A_BOLD%%A_UNDER%Cleaning%A_RESET% %E_CLEAN%
+    "%tool_path%ninja.exe" clean
+    if errorlevel 1 echo %A_BOLD%%A_RED%Error cleaning up build files%A_RESET% %E_STOPD%
+    goto :END_SCRIPT
 )
-if "%option%"=="hard_clean" (
+if %option%=="hard_clean" (
     if "%new_build_dir%"=="1" (
         set only_config=1
-        GOTO END_CLEAN
+        goto :END_CLEAN
     )
-    echo %A_BOLD%%A_UNDER%Hard Cleaning%A_RESET% 🧼🧽
+    echo %A_BOLD%%A_UNDER%Hard Cleaning%A_RESET% %E_CLNDB%
     set only_config=1
-    GOTO BUILD_CLEAN
+    goto :BUILD_CLEAN
+)
+
+if "%DEBUG%"=="1" (
+    echo No valid option found
 )
 
 :HELP_STR
@@ -126,11 +200,11 @@ exit /b 0
 
 :BUILD
 
-if "%no_ninja_script%"=="1" GOTO BUILD_CLEAN
-if "%new_build_dir%"=="1" GOTO END_CLEAN
+if "%no_ninja_script%"=="1" goto :BUILD_CLEAN
+if "%new_build_dir%"=="1" goto :END_CLEAN
 
 
-GOTO FINISH_CLEAN_SECTION
+goto :FINISH_CLEAN_SECTION
 :BUILD_CLEAN
 rmdir /Q /S build
 timeout /t 1 /nobreak >NUL
@@ -140,124 +214,130 @@ timeout /t 1 /nobreak >NUL
 
 if "%skip_prebuild%"=="1" (
     echo %A_YELLOW%Skipping Pre_Build script%A_RESET%
-    GOTO __NO_PREBUILD
+    goto :__NO_PREBUILD
 )
 
 if exist Pre_Build.bat (
-    echo %A_CYAN%%A_BOLD%Running Pre-Build Batch Script%A_RESET% 🧰⚙
+    echo %A_CYAN%%A_BOLD%Running Pre-Build Batch Script%A_RESET% %E_PREBL%
     echo.
     Start Pre_Build.bat
-    GOTO __END_PREBUILD
+    goto :__END_PREBUILD
 )
 if exist Pre_Build.ps1 ( 
-    echo %A_CYAN%%A_BOLD%Running Pre-Build PowerShell Script%A_RESET% 🧰⚙
+    echo %A_CYAN%%A_BOLD%Running Pre-Build PowerShell Script%A_RESET% %E_PREBL%
     echo.
     powershell.exe .\Pre_Build.ps1
-    GOTO __END_PREBUILD
+    goto :__END_PREBUILD
 )
 if exist Pre_Build.py ( 
-    echo %A_CYAN%%A_BOLD%Running Pre-Build Python Script%A_RESET% 🧰⚙
+    echo %A_CYAN%%A_BOLD%Running Pre-Build Python Script%A_RESET% %E_PREBL%
     echo.
     Python.exe Pre_Build.py
-    GOTO __END_PREBUILD
+    goto :__END_PREBUILD
 )
-GOTO __NO_PREBUILD
+goto :__NO_PREBUILD
 :__END_PREBUILD
 if errorlevel 1 (
-    echo %A_BOLD%%A_RED%Pre_Build script failed%A_RESET% ⛔
-    GOTO END_SCRIPT
+    echo %A_BOLD%%A_RED%Pre_Build script failed%A_RESET% %E_STOPD%
+    goto :END_SCRIPT
 )
 :__NO_PREBUILD
 
 cd build
 echo.
-echo %A_BOLD%Configuring CMake project%A_RESET% ⚙️
+echo %A_BOLD%Configuring CMake project%A_RESET% %E_GEARN%
+
+if "%DEBUG%"=="1" (
+    echo %CMAKE_PARAMS%
+)
+
 cmake .. -G Ninja %CMAKE_PARAMS%
 if errorlevel 1 (
-    echo %A_BOLD%%A_RED%Failed to configure cmake%A_RESET% ⛔
-    GOTO END_SCRIPT
+    echo %A_BOLD%%A_RED%Failed to configure cmake%A_RESET% %E_STOPD%
+    goto :END_SCRIPT
 )
-if "%only_config%"=="1" GOTO END_SCRIPT
+if "%only_config%"=="1" goto :END_SCRIPT
 cd ".."
 :FINISH_CLEAN_SECTION
 
 if "%skip_prebuild%"=="1" (
     echo %A_YELLOW%Skipping Pre_Build script%A_RESET%
-    GOTO NO_PREBUILD
+    goto :NO_PREBUILD
 )
 
 if exist Pre_Build.bat (
-    echo %A_CYAN%%A_BOLD%Running Pre-Build Batch Script%A_RESET% 🧰⚙
+    echo %A_CYAN%%A_BOLD%Running Pre-Build Batch Script%A_RESET% %E_PREBL%
     echo.
     Start Pre_Build.bat
-    GOTO END_PREBUILD
+    goto :END_PREBUILD
 )
 if exist Pre_Build.ps1 ( 
-    echo %A_CYAN%%A_BOLD%Running Pre-Build PowerShell Script%A_RESET% 🧰⚙
+    echo %A_CYAN%%A_BOLD%Running Pre-Build PowerShell Script%A_RESET% %E_PREBL%
     echo.
     powershell.exe .\Pre_Build.ps1
-    GOTO END_PREBUILD
+    goto :END_PREBUILD
 )
 if exist Pre_Build.py ( 
-    echo %A_CYAN%%A_BOLD%Running Pre-Build Python Script%A_RESET% 🧰⚙
+    echo %A_CYAN%%A_BOLD%Running Pre-Build Python Script%A_RESET% %E_PREBL%
     echo.
     Python.exe Pre_Build.py
-    GOTO END_PREBUILD
+    goto :END_PREBUILD
 )
-GOTO NO_PREBUILD
+goto :NO_PREBUILD
 :END_PREBUILD
 if errorlevel 1 (
-    echo %A_BOLD%%A_RED%Pre_Build script failed%A_RESET% ⛔
-    GOTO END_SCRIPT
+    echo %A_BOLD%%A_RED%Pre_Build script failed%A_RESET% %E_STOPD%
+    goto :END_SCRIPT
 )
 :NO_PREBUILD
 
 cd build
 echo.
-echo %A_CYAN%%A_BOLD%Building%A_RESET% ⏳
-%tool_path%ninja.exe -j16
+echo %A_CYAN%%A_BOLD%Building%A_RESET% %E_WAITN%
+
+"%tool_path%ninja.exe" -j16
 if errorlevel 1 (
-    echo %A_BOLD%%A_RED%Ninja failed to build%A_RESET% ⛔
-    GOTO END_SCRIPT
+    echo %A_BOLD%%A_RED%Ninja failed to build%A_RESET% %E_STOPD%
+    goto :END_SCRIPT
 )
 echo.
-echo %A_BOLD%%A_GREEN%Build Finished%A_RESET% ☕
+echo %A_BOLD%%A_GREEN%Build Finished%A_RESET% %E_FINIS%
 cd ".."
 for /f "tokens=2 delims==" %%a in ('type build\CMakeCache.txt^|find "FINAL_OUTPUT_FILE:INTERNAL="') do (
-    set FINAL_OUTPUT_FILE=%%a & goto :continueB
+    set FINAL_OUTPUT_FILE=%%a & goto :CONTINUEB
 )
-:continueB
+:CONTINUEB
 
 if not exist "%FINAL_OUTPUT_FILE%" (
-    GOTO BINARY_DOES_NOT_EXIST
+    goto :BINARY_DOES_NOT_EXIST
 ) else (
     echo.
-    echo %A_BOLD%%A_BLUE%Ready to Upload%A_RESET% ⏫
+    echo %A_BOLD%%A_BLUE%Ready to Upload%A_RESET% %E_UPLOD%
 )
-GOTO END_SCRIPT
+goto :END_SCRIPT
 
 :UPLOAD
 
 if not exist build\CMakeCache.txt (
-    echo %A_BOLD%%A_RED%CMake has not been configured%A_RESET% ⛔
+    echo %A_BOLD%%A_RED%CMake has not been configured%A_RESET% %E_STOPD%
     start /wait exit /b 1
-    GOTO END_SCRIPT
+    goto :END_SCRIPT
 )
 
 for /f "tokens=2 delims==" %%a in ('type build\CMakeCache.txt^|find "TEENSY_CORE_NAME:INTERNAL="') do (
-    set TEENSY_CORE_NAME=%%a & goto :continue0
+    set TEENSY_CORE_NAME=%%a & goto :CONTINUE0
 )
-:continue0
+:CONTINUE0
 for /f "tokens=2 delims==" %%a in ('type build\CMakeCache.txt^|find "FINAL_OUTPUT_FILE:INTERNAL="') do (
-    set FINAL_OUTPUT_FILE=%%a & goto :continue1
+    set FINAL_OUTPUT_FILE=%%a & goto :CONTINUE1
 )
-:continue1
+:CONTINUE1
 
 if not exist "%FINAL_OUTPUT_FILE%" (
 :BINARY_DOES_NOT_EXIST
-    echo %A_BOLD%%A_RED%Final binary file was not found%A_RESET% ⛔
+    echo %A_BOLD%%A_RED%Final binary file was not found%A_RESET% %E_STOPD%
     start /wait exit /b 1
-    GOTO END_SCRIPT
+    goto :END_SCRIPT
 )
 
 if "%COM_PORT%"=="" (
@@ -266,35 +346,40 @@ if "%COM_PORT%"=="" (
 )
 
 if "%no_auto_reboot%"=="" ( 
-    %tool_path%ComMonitor.exe "%COM_PORT%" 134 -c --priority
+    "%tool_path%ComMonitor.exe" %COM_PORT% 134 -c --priority
     timeout /t 1 > NUL
 )
 
-%tool_path%teensy_loader_cli.exe -mmcu=%TEENSY_CORE_NAME% -v %FINAL_OUTPUT_FILE%
+"%tool_path%teensy_loader_cli.exe" -mmcu=%TEENSY_CORE_NAME% -v %FINAL_OUTPUT_FILE%
 
 if errorlevel 1 (
-    echo %A_RED%Failed to upload once%A_RESET% ⛔
-    %tool_path%teensy_loader_cli.exe -mmcu=%TEENSY_CORE_NAME% -v %FINAL_OUTPUT_FILE%
+    echo %A_RED%Failed to upload once %E_EHCK2%%A_RESET%
+    "%tool_path%teensy_loader_cli.exe" -mmcu=%TEENSY_CORE_NAME% -v %FINAL_OUTPUT_FILE%
     if errorlevel 1 (
-        echo %A_BOLD%%A_RED%Failed to upload%A_RESET% ⛔
-        echo Is the teensy connected?
-        GOTO END_SCRIPT
+        echo %A_BOLD%%A_RED%Failed to upload%A_RESET% %E_STOPD%
+        if "%DEBUG%"=="1" (
+            echo COM Name %COM_ARG%
+            mode %COM_ARG%
+        )
+        mode %COM_ARG% | find "Illegal device name" > nul && start /wait exit /b 1 || goto :END_SCRIPT
+        echo %A_YELLOW%%A_UNDER%Is the teensy connected?%A_RESET%
+        goto :END_SCRIPT
     )
 )
 
-echo %A_GREEN%Good to go 🦼%A_RESET%
-GOTO END_SCRIPT
+echo %A_GREEN%Good to go %E_CHECK%%A_RESET%
+goto :END_SCRIPT
 
 :END_SCRIPT
 if errorlevel 1 (
     echo.
-    echo %A_BOLD%%A_RED%Task Failed%A_RESET% ❌
+    echo %A_BOLD%%A_RED%Task Failed%A_RESET% %E_EHCKS%
     echo.
     cd %call_path%
     exit /b 1
 ) else (
     echo.
-    echo %A_BOLD%%A_GREEN%Task Succeeded%A_RESET% ✔️
+    echo %A_BOLD%%A_GREEN%Task Succeeded%A_RESET% %E_CHECK%
     cd %call_path%
     exit /b 0
 )
