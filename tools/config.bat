@@ -1,6 +1,6 @@
 @echo off
 
-set DEBUG=0
+set DEBUG=1
 set NOEMOJI=0
 set NOCOLOR=0
 
@@ -45,19 +45,19 @@ set A_WHITE=
 
 if "%NOEMOJI%"=="1" goto :SET_NOEMOJI
 chcp 65001 >NUL
-set E_CHECK=✔︝
+set E_CHECK=✔
 set E_EHCKS=❌
 set E_EHCK2=✖
-set E_FINIS=🝕
+set E_FINIS=🏁
 set E_PREBL=🧰
-set E_SPEED=🝎︝
+set E_SPEED=🚅
 set E_STOPD=⛔
 set E_UPLOD=🔌
 set E_UPRUN=⚡
-set E_WAITN=❳
+set E_WAITN=⏳
 set E_CLEAN=🧹
 set E_CLNDB=🧼🧽
-set E_GEARN=⚙︝
+set E_GEARN=⚙
 goto :END_SET_NOEMOJI
 
 :SET_NOEMOJI
@@ -101,7 +101,7 @@ if %option%=="" (
 
 if [%2]==[] goto :SKIP_PRE_CHECK
 
-if %COM_ARG%==-s (
+if "%COM_ARG%"=="-s" (
     set skip_prebuild=1
 )
 :SKIP_PRE_CHECK
