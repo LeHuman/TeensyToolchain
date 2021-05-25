@@ -249,6 +249,8 @@ def preBuild():
             code = runCommand("Pre_Build.ps1")
         elif os.path.isfile("Pre_Build.py"):
             code = runCommand("Pre_Build.py")
+        else:
+            return
         if code != 0:
             endScript(Text.error("Pre_Build script failed ⛔"))
 
