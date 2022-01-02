@@ -1,0 +1,3 @@
+[submodule "teensy/avr/cores"]
+	path = teensy/avr/cores
+	url = https://github.com/PaulStoffregen/cores
