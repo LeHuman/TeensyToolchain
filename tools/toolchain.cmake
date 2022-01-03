@@ -30,4 +30,4 @@ enable_language(ASM C CXX)
 
 # Toolchain Versions
 set(TEENSYDUINO_VER 156)
-set(ARDUINO_VER 10813)
+set(ARDUINO_VER 10819)
