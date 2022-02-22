@@ -13,6 +13,7 @@ NO_COLOR = False
 
 SELECTION = None
 SECONDARY = None
+THIRD = None
 CMAKE_EXTRA = "-DTOOLCHAIN_OFFSET:STRING={} ".format(TOOLCHAIN_PATH)
 
 SKIP_PREBUILD = False
@@ -137,6 +138,7 @@ usageMap = {
     "disable": Text.warning("disable"),
     "s": Text.gray("-s"),
     "com_port": Text.bold(Text.darkCyan("com_port")),
+    "path_to_bin": Text.bold(Text.darkCyan("path_to_bin")),
     "cmake_defs": Text.bold(Text.gray("cmake_defs")),
     "Pre_Build": Text.magenta("`Pre_Build`"),
     "bat": Text.cyan("`.bat`"),
@@ -159,16 +161,16 @@ msg = """
     
     {Valid options}
     
-        {clean}             \t: Cleanup build files
-        {build}\t[{cmake_defs}]\t: Build project, configuring if necessary
-        {upload}\t[{com_port}]\t: Upload binary file to a connected teensy
-        {disable}\t[{com_port}]\t: Put a connected teensy into programming mode
-        {reset}\t[{cmake_defs}]\t: Refresh project to a clean configured state
-        {config}\t[{cmake_defs}]\t: Reconfigure cmake project, can pass
-                            \t    extra defines {cmake_defs} for cmake
+        {clean}                               \t: Cleanup build files
+        {build}\t[{cmake_defs}]               \t: Build project, configuring if necessary
+        {upload}\t[{com_port}] [{path_to_bin}]\t: Upload binary file to a connected teensy
+        {disable}\t[{com_port}]               \t: Put a connected teensy into programming mode
+        {reset}\t[{cmake_defs}]               \t: Refresh project to a clean configured state
+        {config}\t[{cmake_defs}]              \t: Reconfigure cmake project, can pass
+                                            \t  extra defines {cmake_defs} for cmake
     {Valid flags}
     
-        {s}                 \t: Skip any {Pre_Build} script that exists
+        {s}                                   \t: Skip any {Pre_Build} script that exists
     
     {Prebuild Script}
     
@@ -207,18 +209,14 @@ def endScript(errMsg: str = None):
 
 
 TEENSY_CORE_PREFIX = "TEENSY_CORE_NAME:INTERNAL="
-FINAL_OUTPUT_FILE_PREFIX = "FINAL_OUTPUT_FILE:INTERNAL="
 TEENSY_CORE_NAME = None
-FINAL_OUTPUT_FILE = None
 
 
 def populateCMAKEVars():
     global TEENSY_CORE_NAME, FINAL_OUTPUT_FILE
     with open(BUILDDIR + "\\CMakeCache.txt", "r") as f:
         for line in f:
-            if line.find(FINAL_OUTPUT_FILE_PREFIX) != -1:
-                FINAL_OUTPUT_FILE = line.removeprefix(FINAL_OUTPUT_FILE_PREFIX).rstrip()
-            elif line.find(TEENSY_CORE_PREFIX) != -1:
+            if line.find(TEENSY_CORE_PREFIX) != -1:
                 TEENSY_CORE_NAME = line.removeprefix(TEENSY_CORE_PREFIX).rstrip()
 
 
@@ -231,11 +229,11 @@ def compile():
 
     populateCMAKEVars()
 
-    if not FINAL_OUTPUT_FILE:
-        endScript(Text.error("Final binary file was not found ⛔"))
-    else:
-        print(Text.important("Ready to Upload 🔌"))
-        endScript()
+    # if not FINAL_OUTPUT_FILE:
+    #     endScript(Text.error("Final binary file was not found ⛔"))
+    # else:
+    print(Text.important("Ready to Upload 🔌"))
+    endScript()
 
 
 def preBuild():
@@ -272,9 +270,12 @@ def upload():
     print(Text.header("Upload Binary ⚡"))
     populateCMAKEVars()
 
-    if not FINAL_OUTPUT_FILE:
-        endScript(Text.error("Final binary file was not found ⛔"))
-    elif not SECONDARY:
+    # if not FINAL_OUTPUT_FILE:
+    #     endScript(Text.error("Final binary file was not found ⛔"))
+    # el
+    if not THIRD:
+        endScript(Text.error("No path to hex file given"))
+    if not SECONDARY:
         print(Text.warning("Warning! no port defined, unable to auto reboot ⚠"))
     else:
         disable()
@@ -284,7 +285,7 @@ def upload():
     tries = 1
 
     while True:
-        if runCommand(TOOL_PATH + "teensy_loader_cli.exe -mmcu={} -v {}".format(TEENSY_CORE_NAME, FINAL_OUTPUT_FILE)) == 0:
+        if runCommand(TOOL_PATH + "teensy_loader_cli.exe -mmcu={} -v {}".format(TEENSY_CORE_NAME, THIRD)) == 0:
             print(Text.success("\nGood to go ✔"))
             endScript()
         elif tries == 0:
@@ -339,6 +340,8 @@ SELECTION = sys.argv[1].strip(" '\"").upper()
 
 if len(sys.argv) > 2:
     SECONDARY = sys.argv[2].strip(" '\"").upper()
+    if len(sys.argv) > 3:
+        THIRD = sys.argv[3].strip(" '\"").upper()
     SKIP_PREBUILD = SECONDARY == "-S"
     if SKIP_PREBUILD:
         CMAKE_EXTRA += " ".join(sys.argv[3:])
