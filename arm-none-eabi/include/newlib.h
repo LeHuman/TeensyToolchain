@@ -21,7 +21,7 @@
 #define _WANT_IO_LONG_LONG 1
 
 /* Register application finalization function using atexit. */
-#define _WANT_REGISTER_FINI 1
+/* #undef _WANT_REGISTER_FINI */
 
 /* long double type support in IO functions like printf/scanf enabled */
 /* #undef _WANT_IO_LONG_DOUBLE */
@@ -37,10 +37,10 @@
 #define _REENT_CHECK_VERIFY 1
 
 /* Multibyte supported */
-/* #undef _MB_CAPABLE */
+#define _MB_CAPABLE 1
 
 /* MB_LEN_MAX */
-#define _MB_LEN_MAX 1
+#define _MB_LEN_MAX 8
 
 /* ICONV enabled */
 /* #undef _ICONV_ENABLED */
@@ -92,7 +92,7 @@
 /* #undef _NANO_FORMATTED_IO */
 
 /* Define if using retargetable functions for default lock routines.  */
-#define _RETARGETABLE_LOCKING 1
+/* #undef _RETARGETABLE_LOCKING */
 
 /* Define to use type long for time_t.  */
 /* #undef _WANT_USE_LONG_TIME_T */
